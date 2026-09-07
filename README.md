@@ -26,9 +26,9 @@ perc-v13/
 | 版本 | 仓库 | 可见性 | 密钥处理 |
 |------|------|--------|----------|
 | 内部版 | `g101400/ganzhi-yitu5090` | **私有** | 保留 `assets/ai_seed.js`（密钥不变） |
-| 公开版 | `g101400/ganzhi-yitu`      | **公开** | 自动排除 `ai_seed.js`（脱敏，仅留 `ai_seed.demo.js`） |
+| 公开版 | `g101400/ganzhi-yitu-5090pub` | **公开** | 自动排除 `ai_seed.js`（脱敏，仅留 `ai_seed.demo.js`） |
 
-内部版仓库名末尾带 `5090`，且设为私有；公开版公开、不含密钥。
+内部版仓库名末尾带 `5090`、设为私有；公开版以 `-5090pub` 结尾、设为公开、不含密钥（方案 C 命名，避免与内部版撞名）。
 
 ## 同步到 GitHub
 
@@ -47,13 +47,13 @@ cp .gujian_token.example .gujian_token   # 填入你的 GitHub PAT
 python3 tools/gh_sync.py                 # 一次推内部版(全量)+公开版(脱敏)
 ```
 
-脚本按目录自动识别为感知应用，分别推 `ganzhi-yitu5090`（全量含密钥）与 `ganzhi-yitu`（排除 ai_seed.js）。
+脚本按目录自动识别为感知应用，分别推 `ganzhi-yitu5090`（全量含密钥）与 `ganzhi-yitu-5090pub`（排除 ai_seed.js）。
 
 ## 从 GitHub 下载 / 克隆
 
 ```bash
-git clone https://github.com/g101400/ganzhi-yitu.git         # 公开版
-git clone https://github.com/g101400/ganzhi-yitu5090.git      # 内部版（需私有仓库权限）
+git clone https://github.com/g101400/ganzhi-yitu-5090pub.git # 公开版
+ git clone https://github.com/g101400/ganzhi-yitu5090.git        # 内部版（需私有仓库权限）
 ```
 
 ## 密钥安全管理
