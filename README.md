@@ -1,6 +1,6 @@
 # 水利感知项目一张图（感知设备一张图，离线 WebView）
 
-水利感知项目一张图（离线 WebView App），即「感知设备一张图」，package `com.shuili.ganzhi`，当前版本 v1.34。
+水利感知项目一张图（离线 WebView App），即「感知设备一张图」，package `com.shuili.ganzhi`，当前版本 v1.35（公开测试版）。
 作者：小七。覆盖视频监控 / 雨水情监测 / 大坝安全监测 / 地下水源监测 四类子系统，支持 Android / Windows(WebView2) / UOS(Linux deb) / iOS(PWA) 四端，数据离线内置（1125 条监测设施随包内置）。
 
 ## 工程结构
