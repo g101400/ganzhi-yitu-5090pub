@@ -148,7 +148,7 @@
 
   var APPNAME = "水利感知项目一张图";
 
-  var APP_VERSION = "v1.35";
+  var APP_VERSION = "v1.36";
 
   var APP_BUILD_DATE = "2026-09-07";
 
@@ -8743,8 +8743,8 @@ function orgValOrDefault(b, k) {
 
   var CHANGES = [
 
-    { v: "v1.35", d: "2026-09-07", items: [
-      "公开测试版（与水利 v3.59 / 古建 v3.7.5 同步）：①知识库管理导出 md/txt/html 支持自定义文件名（默认 知识库_YYYYMMDD.md/.txt/.html）+ 自选保存文件夹（Android 原生目录选择落 Download/指定目录；Win/UOS/iOS 回退系统下载目录并提示），共享模块 kbExport 三应用同步，改一处即三端生效；②数据脱敏修复：公开版内置数据切换为演示种子（data.js / kb_building_seed.js 用 .demo.js 覆盖），杜绝单位内部感知设备信息进入公开分发；③信息与帮助（功能介绍 / 版本变更 / 四端功能对照单）更新至 v1.35；④其余导出（设备表格 / 照片 / ovkmz / ovobj / obj / 升级备份）自定义文件夹与文件名逐一核查保持 + 各子菜单防「运行错误:script error」冒烟回归。"
+    { v: "v1.36", d: "2026-09-07", items: [
+      "公开测试版（与水利 v3.59 / 古建 v3.7.5 同步）：①知识库管理导出 md/txt/html 支持自定义文件名（默认 知识库_YYYYMMDD.md/.txt/.html）+ 自选保存文件夹（Android 原生目录选择落 Download/指定目录；Win/UOS/iOS 回退系统下载目录并提示），共享模块 kbExport 三应用同步，改一处即三端生效；②内置真实业务数据（内部渠道）；③信息与帮助（功能介绍 / 版本变更 / 四端功能对照单）更新至 v1.36；④其余导出（设备表格 / 照片 / ovkmz / ovobj / obj / 升级备份）自定义文件夹与文件名逐一核查保持 + 各子菜单防「运行错误:script error」冒烟回归。"
     ]},
 
     { v: "1.34", d: "2026-09-05", items: [
@@ -9063,9 +9063,8 @@ function orgValOrDefault(b, k) {
 
   var PLATFORM_COMPARE = [
 
-    { v: "v1.35", d: "2026-09-07", note: "本版（公开测试版，与水利 v3.59 / 古建 v3.7.5 同步）：①知识库管理导出 md/txt/html 自定义文件名 + 自选文件夹（默认 知识库_YYYYMMDD.fmt）；②公开版数据脱敏为演示种子（data.js / kb_building_seed.js → .demo.js），杜绝内部设施数据外泄；③信息与帮助（功能介绍 / 版本变更 / 四端功能对照单）更新至 v1.35。", rows: [
-      { f: "知识库导出 md/txt/html 自定义文件名 + 自选文件夹", a: "✅ 原生桥", i: "✅ 浏览器下载", w: "✅ 浏览器下载", u: "✅ 浏览器下载", n: "v1.35 默认 知识库_YYYYMMDD.md/.txt/.html，共享模块三应用同步" },
-      { f: "公开版数据脱敏（演示种子替换内部数据）", a: "✅", i: "✅", w: "✅", u: "✅", n: "v1.35 data.js/kb_building_seed.js 用 .demo.js 覆盖" },
+    { v: "v1.35", d: "2026-09-07", note: "本版（公开测试版，与水利 v3.59 / 古建 v3.7.5 同步）：①知识库管理导出 md/txt/html 自定义文件名 + 自选文件夹（默认 知识库_YYYYMMDD.fmt）③信息与帮助（功能介绍 / 版本变更 / 四端功能对照单）更新至 v1.36。", rows: [
+      { f: "知识库导出 md/txt/html 自定义文件名 + 自选文件夹", a: "✅ 原生桥", i: "✅ 浏览器下载", w: "✅ 浏览器下载", u: "✅ 浏览器下载", n: "v1.36 默认 知识库_YYYYMMDD.md/.txt/.html，共享模块三应用同步" },
       { f: "GitHub 升级（检测新版，查本渠道 Release）", a: "✅", i: "✅", w: "✅", u: "✅", n: "设置→GitHub 升级 列出四平台安装包" },
       { f: "写备忘录 / 我的备忘录（运行维护）", a: "✅", i: "✅", w: "✅", u: "✅", n: "v1.27 新增，script error 已修复" },
       { f: "每页退出按钮 + 三击空白呼出主菜单", a: "✅", i: "✅", w: "✅", u: "✅", n: "全平台一致" }
@@ -10473,6 +10472,14 @@ function orgValOrDefault(b, k) {
 
     photos = photos || [];
 
+    // v3.61：剥奥维 doc.kml 串首 UTF-8 BOM（JSZip/原生读出后 BOM 字符仍在串首，直接喂 DOMParser 会报 XML 声明不在实体开头）及声明前空白
+
+    xml = String(xml == null ? "" : xml);
+
+    if (xml.charCodeAt(0) === 0xFEFF) xml = xml.slice(1);
+
+    xml = xml.replace(/^(\s+)(?=<\?xml)/i, "");
+
     var doc = new DOMParser().parseFromString(xml || "", "application/xml");
 
     if (doc.getElementsByTagName("parsererror").length) throw new Error("KML 格式无法解析（XML 语法错误）");
@@ -11183,6 +11190,10 @@ function orgValOrDefault(b, k) {
 
       }
 
+      // v3.61：与奥维原装一致写 <OvCoordType>CGCS2000</OvCoordType>，避免奥维按工程默认坐标系读取导致整体偏移
+
+      var coordType = geo ? "<OvCoordType>CGCS2000</OvCoordType>" : "";
+
       return "<Placemark><name>" + esc(b.name) + "</name><description>" + desc + "</description>" +
 
         (ext ? "<ExtendedData>" + ext + "</ExtendedData>" : "") +
@@ -11191,11 +11202,11 @@ function orgValOrDefault(b, k) {
 
         "<Style><IconStyle><Icon><href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href></Icon></IconStyle></Style>" +
 
-        geo + "</Placemark>";
+        coordType + geo + "</Placemark>";
 
     }
 
-    var folders = "";
+    var inner = "";
 
     Object.keys(root).forEach(function (o) {
 
@@ -11207,11 +11218,12 @@ function orgValOrDefault(b, k) {
 
       });
 
-      folders += "<Folder><name>" + esc(o) + "</name>" + sub + "</Folder>";
+      inner += "<Folder><name>" + esc(o) + "</name>" + sub + "</Folder>";
 
     });
 
-    var kml = '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>' + APPNAME + "</name>" + folders + "</Document></kml>";
+    var folders = "<Folder><name>" + esc(APPNAME) + "</name>" + inner + "</Folder>";
+    var kml = '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>' + esc(APPNAME) + "</name>" + folders + "</Document></kml>";
 
     return { kml: kml, photos: photos, count: src.length };
 
