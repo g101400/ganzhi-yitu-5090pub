@@ -161,9 +161,9 @@
 
   var APPNAME = "水利感知项目一张图";
 
-  var APP_VERSION = "v1.39";
+  var APP_VERSION = "1.40";
 
-  var APP_BUILD_DATE = "2026-09-07";
+  var APP_BUILD_DATE = "2026-09-08";
 
   // —— 双通道发版（防泄密）：版本末位奇偶决定发布通道 ——
   // 偶数(如 v1.26) = 内部版，保留单位内部数据；奇数(如 v1.25) = 公开/测试版，不含内部数据。
@@ -3353,6 +3353,13 @@ function orgValOrDefault(b, k) {
     return String(k || "");
 
   }
+
+
+  /* ---------- v3.7.7 菜单收藏/隐藏统一 API（作用域内补齐，杜绝 getFavMenus 未定义） ---------- */
+
+  function getFavMenus() { try { return JSON.parse(localStorage.getItem("favMenus") || "[]"); } catch (e) { return []; } }
+
+  function setFavMenus(a) { try { localStorage.setItem("favMenus", JSON.stringify(a || [])); } catch (e) {} }
 
   // ---------- v3.61：隐藏子菜单（不常用菜单可隐藏以简化界面；设置→已隐藏子菜单 可恢复） ----------
 
@@ -10688,6 +10695,31 @@ function orgValOrDefault(b, k) {
       } catch (e) {}
 
       save(); render(); buildLegend();
+
+      // v3.63 导入后自动定位（安卓 WebView 导入后「显示不正常 / 不能放大」根因修复）
+
+      try {
+
+        if (typeof map !== "undefined" && map && map.invalidateSize) { try { map.invalidateSize(); } catch (e) {} }
+
+        var __pts = (list || []).filter(function (nb) {
+
+          return nb && isFinite(nb.lat) && isFinite(nb.lon) && (Math.abs(nb.lat) > 1e-6 || Math.abs(nb.lon) > 1e-6);
+
+        });
+
+        if (__pts.length && typeof map !== "undefined" && map && map.fitBounds && typeof L !== "undefined") {
+
+          var __b = L.latLngBounds(__pts.map(function (p) { return [p.lat, p.lon]; }));
+
+          try { map.fitBounds(__b.pad(0.2), { maxZoom: 16, animate: false }); } catch (e) {}
+
+          setTimeout(function () { try { map.invalidateSize(); } catch (e) {} }, 300);
+
+        }
+
+      } catch (e) {}
+
 
       idle();
 
