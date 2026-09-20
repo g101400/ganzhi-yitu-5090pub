@@ -8153,7 +8153,7 @@ function orgValOrDefault(b, k) {
 
   }
 
-  function scopeLabel(it) { return it.folder ? ("文件夹：" + it.folder) : ""; }
+  function scopeFolderLabel(it) { return it.folder ? ("文件夹：" + it.folder) : ""; }
 
   // 落盘保存一张照片（原生 linkPhoto；浏览器回退 base64）
 
@@ -8239,15 +8239,15 @@ function orgValOrDefault(b, k) {
 
         else if (linkOrBase64(cl.b, it)) { r.auto++; }
 
-        else { r.unmatched.push({ it: it, scope: scopeLabel(it) }); }
+        else { r.unmatched.push({ it: it, scope: scopeFolderLabel(it) }); }
 
       } else if (cl.kind === "ambiguous") {
 
-        r.ambiguous.push({ it: it, cands: cl.cands.map(function (m) { return { b: m.b, s: m.s }; }), scope: scopeLabel(it) });
+        r.ambiguous.push({ it: it, cands: cl.cands.map(function (m) { return { b: m.b, s: m.s }; }), scope: scopeFolderLabel(it) });
 
       } else {
 
-        r.unmatched.push({ it: it, scope: scopeLabel(it) });
+        r.unmatched.push({ it: it, scope: scopeFolderLabel(it) });
 
       }
 
@@ -8445,15 +8445,15 @@ function orgValOrDefault(b, k) {
 
           else if (linkOrBase64(cl.b, it)) { r.auto++; }
 
-          else { r.unmatched.push({ it: it, scope: scopeLabel(it) }); }
+          else { r.unmatched.push({ it: it, scope: scopeFolderLabel(it) }); }
 
         } else if (cl.kind === "ambiguous") {
 
-          r.ambiguous.push({ it: it, cands: cl.cands.map(function (m) { return { b: m.b, s: m.s }; }), scope: scopeLabel(it) });
+          r.ambiguous.push({ it: it, cands: cl.cands.map(function (m) { return { b: m.b, s: m.s }; }), scope: scopeFolderLabel(it) });
 
         } else {
 
-          r.unmatched.push({ it: it, scope: scopeLabel(it) });
+          r.unmatched.push({ it: it, scope: scopeFolderLabel(it) });
 
         }
 
