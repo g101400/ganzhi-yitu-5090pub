@@ -238,7 +238,7 @@
 
   //   水利→水库所；感知→水库所；古建→北京市（各自 app.js 内定义本常量）
 
-  var DEFAULT_FILTER_SEED = { offices: ["水库所"], stations: [], types: [], attrs: [], photoStatus: "all", photoMin: 3, text: "" };
+  var DEFAULT_FILTER_SEED = { offices: ["水库所"], stations: [], types: [], attrs: [], invertTypes: false, invertGuanchu: false, invertOffices: false, invertStations: false, photoStatus: "all", photoMin: 3, text: "" };
 
   function cloneSeed(s) { var o = {}; Object.keys(s).forEach(function (k) { o[k] = Array.isArray(s[k]) ? s[k].slice() : s[k]; }); return o; }
 
@@ -325,7 +325,7 @@
 
   var editing = null;
 
-  var filters = { guanchu: new Set(["京密引水管理处"]), offices: new Set(), stations: new Set(), types: new Set(), attrs: new Set(), photoStatus: "all", photoMin: 3, text: "" };
+  var filters = { guanchu: new Set(["京密引水管理处"]), offices: new Set(), stations: new Set(), types: new Set(), attrs: new Set(), invertTypes: false, invertGuanchu: false, invertOffices: false, invertStations: false, photoStatus: "all", photoMin: 3, text: "" };
 
   var pendingExportTarget = null; // 照片导出目标：local / baidu / quark / wechat / feishu / qq
 
@@ -767,7 +767,7 @@
 
   }
 
-  // 建筑物类型自定义清单（v3.42：可增删改，与权威清单同权展示）
+  // 设备类型自定义清单（v3.42：可增删改，与权威清单同权展示）
 
   function getCustomTypes() { try { return JSON.parse(localStorage.getItem("org_types") || "[]"); } catch (e) { return []; } }
 
@@ -2107,7 +2107,7 @@ function orgValOrDefault(b, k) {
 
   }
 
-  // v3.25：形状维度——与颜色配合区分建筑物类型；取与颜色同源的哈希，保证类型→(色,形)映射稳定
+  // v3.25：形状维度——与颜色配合区分设备类型；取与颜色同源的哈希，保证类型→(色,形)映射稳定
 
   var SHAPE_GLYPHS = ["●", "■", "▲", "◆", "★", "⬢", "✚", "✖"];
 
@@ -2121,7 +2121,7 @@ function orgValOrDefault(b, k) {
 
   }
 
-  // v3.24：规范建筑物类型清单。主界面图例、筛选类型、编辑表单类型下拉统一以此为准，
+  // v3.24：规范设备类型清单。主界面图例、筛选类型、编辑表单类型下拉统一以此为准，
 
   // 不再从数据动态拼出乱字段（移除被误当类型的 西田各庄段引渠 / 技术指标 / 挖填方统计表 /
 
@@ -2575,7 +2575,7 @@ function orgValOrDefault(b, k) {
 
   function makeIcon(color, glyph) {
 
-    // 倒立水滴标记：填充色 = 建筑物类型颜色（colorForType）；中心白点内嵌该类型专属形状符号（shapeForType）
+    // 倒立水滴标记：填充色 = 设备类型颜色（colorForType）；中心白点内嵌该类型专属形状符号（shapeForType）
 
     var svg = '<svg width="32" height="44" viewBox="0 0 32 44">' +
 
@@ -2619,17 +2619,27 @@ function orgValOrDefault(b, k) {
 
       var bG = b.guanchu || getOrgDefaults().guanchu;
 
-      if (!filters.guanchu.has(bG)) return false;
+      var _gSel = filters.guanchu.has(bG);
+      if (filters.invertGuanchu ? _gSel : !_gSel) return false;
 
     }
 
     // v3.26：管理所筛选忽略"管理"二字（史山所 与 史山管理所 视为同一）
 
-    if (filters.offices.size && !filters.offices.has(normOffice(b.office))) return false;
+    if (filters.offices.size) {
+      var _oS = filters.offices.has(normOffice(b.office));
+      if (filters.invertOffices ? _oS : !_oS) return false;
+    }
 
-    if (filters.stations.size && !filters.stations.has(b.station || "")) return false;
+    if (filters.stations.size) {
+      var _sSel = filters.stations.has(b.station || "");
+      if (filters.invertStations ? _sSel : !_sSel) return false;
+    }
 
-    if (filters.types.size && !filters.types.has(b.btype)) return false;
+    if (filters.types.size) {
+      var _tSel = filters.types.has(b.btype);
+      if (filters.invertTypes ? _tSel : !_tSel) return false;
+    }
 
     // Req 1：照片状态筛选：有照片 / 多张照片 / 无照片
 
@@ -3503,7 +3513,7 @@ function orgValOrDefault(b, k) {
 
     var types = all.slice(0, 8);
 
-    var html = "<b>建筑物类型</b>";
+    var html = "<b>设备类型</b>";
 
     types.forEach(function (t) {
 
@@ -3721,7 +3731,17 @@ function orgValOrDefault(b, k) {
   }
 
 
-  function buildMenu() {
+  function appSmartAIHidden() {
+  try { var v = localStorage.getItem("smartAIHidden"); return v !== "0"; } catch (e) { return true; }
+}
+function toggleSmartAI() {
+  var v = appSmartAIHidden() ? "0" : "1";
+  try { localStorage.setItem("smartAIHidden", v); } catch (e) {}
+  if (typeof buildMenu === "function") buildMenu();
+  toast(v === "1" ? "已隐藏「智能AI / 知识库与智能」子菜单" : "已恢复显示「智能AI / 知识库与智能」子菜单");
+}
+
+function buildMenu() {
 
     // 一级菜单：查询 / 筛选 置顶并列；分组顺序（v3.42）：快捷常用→地图和位置→数据管理→传输与共享→运行维护→智能AI→设置→信息与帮助
 
@@ -3850,6 +3870,7 @@ function orgValOrDefault(b, k) {
     if (window.AIModule && typeof AIModule.getMenuGroups === "function") {
 
       AIModule.getMenuGroups().forEach(function (g) {
+        if (appSmartAIHidden()) return;
 
         g.items.forEach(function (it) { if (!it.k) it.k = "m:" + it.t; });
 
@@ -3864,6 +3885,7 @@ function orgValOrDefault(b, k) {
     // v3.64 / v3.70：知识库与智能（模糊检索 / 提示词生成 / AI记忆·Hermes / 存疑反向查询 / 强制联网 + 向量内核）
     if (window.KBCore && typeof KBCore.getMenuGroups === "function") {
       KBCore.getMenuGroups().forEach(function (g) {
+        if (appSmartAIHidden()) return;
         g.items.forEach(function (it) { if (!it.k) it.k = "m:" + it.t; });
         if (g.g === "智能化内核") {
           g.g = "知识库与智能"; // v3.70：合并概念重叠的两个 AI 组命名
@@ -3883,6 +3905,9 @@ function orgValOrDefault(b, k) {
     // 设置：组织与类型管理（v3.42 新增）+ 快捷常用设置 + 危险操作 + AI 设置项
 
     groups.push({ g: "设置", ico: "⚙️", items: [
+
+      { k: "toggleSmartAI", ico: "🤖", t: (appSmartAIHidden() ? "⬆️ 一键显示智能AI子菜单" : "🙈 一键隐藏智能AI子菜单"), f: function () { toggleSmartAI(); } },
+
 
       { k: "orgManage", ico: "🏢", t: "组织与类型管理（局/管理处/所/站/段/类型）", f: function () { closeSheet("sheetMenu"); openOrgManage(); } },
 
@@ -4116,7 +4141,7 @@ function orgValOrDefault(b, k) {
 
       '<button class="tbtn" data-otab="defaults" style="flex:1">②默认设置</button>' +
 
-      '<button class="tbtn" data-otab="types" style="flex:1">③建筑物类型</button></div><div id="orgPanel"></div>' +
+      '<button class="tbtn" data-otab="types" style="flex:1">③设备类型</button></div><div id="orgPanel"></div>' +
 
       '<div class="form-actions"><button class="btn-cancel" onclick="closeSheet(\'sheetGen\')">关闭</button>' +
 
@@ -4406,7 +4431,7 @@ function orgValOrDefault(b, k) {
 
   };
 
-  // —— 面板③：建筑物类型增删改 ——
+  // —— 面板③：设备类型增删改 ——
 
   function orgPanelTypes() {
 
@@ -5000,7 +5025,8 @@ function orgValOrDefault(b, k) {
 
         Array.from(filters.guanchu).forEach(function (v) {
 
-          tags.push('<span class="fc-tag"><span class="fc-k">管理处</span>' + esc(v) + "</span>");
+          var _glabel = filters.invertGuanchu ? "管理处(排除)" : "管理处";
+          tags.push('<span class="fc-tag"><span class="fc-k">' + _glabel + '</span>' + esc(v) + "</span>");
 
         });
 
@@ -5010,7 +5036,8 @@ function orgValOrDefault(b, k) {
 
         Array.from(filters.offices).forEach(function (v) {
 
-          tags.push('<span class="fc-tag"><span class="fc-k">管理所</span>' + esc(v || "未设置") + "</span>");
+          var _olabel = filters.invertOffices ? "管理所(排除)" : "管理所";
+          tags.push('<span class="fc-tag"><span class="fc-k">' + _olabel + '</span>' + esc(v || "未设置") + "</span>");
 
         });
 
@@ -5020,7 +5047,8 @@ function orgValOrDefault(b, k) {
 
         Array.from(filters.stations).forEach(function (v) {
 
-          tags.push('<span class="fc-tag"><span class="fc-k">管理站</span>' + esc(v || "未设置") + "</span>");
+          var _slabel = filters.invertStations ? "管理站(排除)" : "管理站";
+          tags.push('<span class="fc-tag"><span class="fc-k">' + _slabel + '</span>' + esc(v || "未设置") + "</span>");
 
         });
 
@@ -5030,7 +5058,8 @@ function orgValOrDefault(b, k) {
 
         Array.from(filters.types).forEach(function (v) {
 
-          tags.push('<span class="fc-tag"><span class="fc-k">类型</span>' + esc(v || "其他") + "</span>");
+          var _tlabel = filters.invertTypes ? "设备类型(排除)" : "设备类型";
+          tags.push('<span class="fc-tag"><span class="fc-k">' + _tlabel + '</span>' + esc(v || "其他") + "</span>");
 
         });
 
@@ -5090,19 +5119,32 @@ function orgValOrDefault(b, k) {
 
       // v3.45：管理处可多选（按管理范围最粗颗粒先筛），默认京密引水管理处（持久化兜底在 SETTINGS.defaultFilter）
 
-      '<div class="filter-sec"><h4>管理处</h4><div class="chips" id="cGc">' + chips(guanchuOptions(), filters.guanchu, "guanchu") + "</div>" +
+      '<div class="filter-sec"><h4>管理处' +
+        ' <button class="tbtn" id="btnInvertGc" onclick="toggleInvertGuanchu()">' + (filters.invertGuanchu ? "✅ 已反选" : "⇄ 反选") + '</button></h4>' +
+        '<div class="chips" id="cGc">' + chips(guanchuOptions(), filters.guanchu, "guanchu") + "</div>" +
+        '<div id="gcInvertHint" style="font-size:12px;color:var(--muted);margin-top:5px;' + (filters.invertGuanchu ? "" : "display:none") + '>反选已开启：勾选的管理处将被排除，地图只显示其余管理处。</div>' +
 
       '<div style="display:flex;gap:6px;margin-top:6px"><button class="tbtn" onclick="addGuanchu()">＋ 添加</button><button class="tbtn" onclick="renameGuanchu()">✎ 改名</button></div></div>' +
 
-      '<div class="filter-sec"><h4>管理所</h4><div class="chips" id="cOff">' + chips(offices, filters.offices, "office") + "</div>" +
+      '<div class="filter-sec"><h4>管理所' +
+        ' <button class="tbtn" id="btnInvertOff" onclick="toggleInvertOffices()">' + (filters.invertOffices ? "✅ 已反选" : "⇄ 反选") + '</button></h4>' +
+        '<div class="chips" id="cOff">' + chips(offices, filters.offices, "office") + "</div>" +
+        '<div id="offInvertHint" style="font-size:12px;color:var(--muted);margin-top:5px;' + (filters.invertOffices ? "" : "display:none") + '>反选已开启：勾选的管理所将被排除，地图只显示其余管理所。</div>' +
 
       '<div style="display:flex;gap:6px;margin-top:6px"><button class="tbtn" onclick="addOffice()">＋ 添加</button><button class="tbtn" onclick="renameOffice()">✎ 改名</button></div></div>' +
 
-      '<div class="filter-sec"><h4>管理站</h4><div class="chips" id="cSta">' + chips(stations, filters.stations, "station") + "</div>" +
+      '<div class="filter-sec"><h4>管理站' +
+        ' <button class="tbtn" id="btnInvertSta" onclick="toggleInvertStations()">' + (filters.invertStations ? "✅ 已反选" : "⇄ 反选") + '</button></h4>' +
+        '<div class="chips" id="cSta">' + chips(stations, filters.stations, "station") + "</div>" +
+        '<div id="staInvertHint" style="font-size:12px;color:var(--muted);margin-top:5px;' + (filters.invertStations ? "" : "display:none") + '>反选已开启：勾选的管理站将被排除，地图只显示其余管理站。</div>' +
 
       '<div style="display:flex;gap:6px;margin-top:6px"><button class="tbtn" onclick="addStation()">＋ 添加</button><button class="tbtn" onclick="renameStation()">✎ 改名</button></div></div>' +
 
-      '<div class="filter-sec"><h4>建筑物类型</h4><div class="chips" id="cTyp">' + chips(types, filters.types, "type") + "</div></div>" +
+      '<div class="filter-sec"><h4>设备类型' +
+        ' <button class="tbtn" id="btnInvertType" onclick="toggleInvertTypes()">' + (filters.invertTypes ? "✅ 已反选" : "⇄ 反选") + '</button></h4>' +
+        '<div class="chips" id="cTyp">' + chips(types, filters.types, "type") + "</div>" +
+        '<div id="typeInvertHint" style="font-size:12px;color:var(--muted);margin-top:5px;' + (filters.invertTypes ? "" : "display:none") + '>反选已开启：勾选的设备类型将被排除，地图只显示其余设备类型。</div>' +
+      '</div>' +
 
       '<div class="filter-sec"><h4>照片状态</h4><div class="chips" id="cPh">' + photoChips() + "</div></div>" +
 
@@ -5192,11 +5234,40 @@ function orgValOrDefault(b, k) {
 
   };
 
+  window.toggleInvertTypes = function () {
+    filters.invertTypes = !filters.invertTypes;
+    var btn = $("btnInvertType"); if (btn) btn.textContent = filters.invertTypes ? "✅ 已反选" : "⇄ 反选";
+    var hint = $("typeInvertHint"); if (hint) hint.style.display = filters.invertTypes ? "" : "none";
+    saveDefaultFilter(); scheduleRender(); updateFilterCount();
+  };
+
+  window.toggleInvertGuanchu = function () {
+    filters.invertGuanchu = !filters.invertGuanchu;
+    var btn = $("btnInvertGc"); if (btn) btn.textContent = filters.invertGuanchu ? "✅ 已反选" : "⇄ 反选";
+    var hint = $("gcInvertHint"); if (hint) hint.style.display = filters.invertGuanchu ? "" : "none";
+    saveDefaultFilter(); scheduleRender(); updateFilterCount();
+  };
+
+  window.toggleInvertOffices = function () {
+    filters.invertOffices = !filters.invertOffices;
+    var btn = $("btnInvertOff"); if (btn) btn.textContent = filters.invertOffices ? "✅ 已反选" : "⇄ 反选";
+    var hint = $("offInvertHint"); if (hint) hint.style.display = filters.invertOffices ? "" : "none";
+    saveDefaultFilter(); scheduleRender(); updateFilterCount();
+  };
+
+  window.toggleInvertStations = function () {
+    filters.invertStations = !filters.invertStations;
+    var btn = $("btnInvertSta"); if (btn) btn.textContent = filters.invertStations ? "✅ 已反选" : "⇄ 反选";
+    var hint = $("staInvertHint"); if (hint) hint.style.display = filters.invertStations ? "" : "none";
+    saveDefaultFilter(); scheduleRender(); updateFilterCount();
+  };
+
   window.appClearFilter = function () {
 
-    filters.offices.clear(); filters.stations.clear(); filters.types.clear(); filters.attrs.clear();
+    filters.guanchu.clear(); filters.offices.clear(); filters.stations.clear(); filters.types.clear(); filters.attrs.clear();
 
     filters.photoStatus = "all";
+    filters.invertTypes = false; filters.invertGuanchu = false; filters.invertOffices = false; filters.invertStations = false;
 
     filters.text = "";
 
@@ -5205,6 +5276,14 @@ function orgValOrDefault(b, k) {
     var sb = $("search"); if (sb) sb.value = "";
 
     $("genBody").querySelectorAll(".chip").forEach(function (c) { c.classList.remove("on"); });
+    var _bi = $("btnInvertType"); if (_bi) _bi.textContent = "⇄ 反选";
+    var _hi = $("typeInvertHint"); if (_hi) _hi.style.display = "none";
+    var _gc = $("btnInvertGc"); if (_gc) _gc.textContent = "⇄ 反选";
+    var _gch = $("gcInvertHint"); if (_gch) _gch.style.display = "none";
+    var _of = $("btnInvertOff"); if (_of) _of.textContent = "⇄ 反选";
+    var _ofh = $("offInvertHint"); if (_ofh) _ofh.style.display = "none";
+    var _st = $("btnInvertSta"); if (_st) _st.textContent = "⇄ 反选";
+    var _sth = $("staInvertHint"); if (_sth) _sth.style.display = "none";
 
     // 照片状态回到"全部"需要让对应 chip 重新高亮
 
@@ -6102,7 +6181,7 @@ function orgValOrDefault(b, k) {
       '<label class="f">局</label><select class="f" id="fJu">' + opt(juOpts, b.ju || getOrgDefaults().ju) + "</select>" +
       '<label class="f">管理处</label><select class="f" id="fGuanchu">' + opt(gcOpts, b.guanchu || getOrgDefaults().guanchu) + "</select>" +
 
-      '<label class="f">建筑物类型</label><input class="f" id="fType" list="dlType" value="' + esc(b.btype) + '"><datalist id="dlType">' + opt(types, b.btype) + "</datalist>" +
+      '<label class="f">设备类型</label><input class="f" id="fType" list="dlType" value="' + esc(b.btype) + '"><datalist id="dlType">' + opt(types, b.btype) + "</datalist>" +
 
       '<label class="f">经度</label><input class="f" id="fLon" value="' + (b.lon != null ? b.lon : "") + '">' +
 
@@ -6467,6 +6546,48 @@ function orgValOrDefault(b, k) {
     map.setView([lat, lon], zoom || 16);
 
   };
+  // v3.78：智能反查/报告/文档结果点击定位——忽略筛选选项，强制在地图上显示该条目图标并弹窗
+  window.appFocusBuilding = function (b, name) {
+    if (!b) return false;
+    var lat, lon;
+    if (b.geom === "Line" && b.line && b.line.length) {
+      var mid = b.line[Math.floor(b.line.length / 2)];
+      lon = mid[0]; lat = mid[1];
+    } else {
+      lat = (b.lat != null) ? b.lat : b.latitude;
+      lon = (b.lon != null) ? b.lon : b.longitude;
+    }
+    if (lat == null || lon == null) { toast("该条目无坐标信息，无法定位"); return false; }
+    // 退出列表视图，确保地图可见
+    listMode = false;
+    var lv = $("listView"), mp = $("map");
+    if (lv) lv.style.display = "none";
+    if (mp) mp.style.display = "block";
+    // 若该条目真实 marker 仍存在（未被筛选隐藏），直接复用并弹窗
+    if (b.id != null && MARKERS[b.id]) {
+      try { MARKERS[b.id].openPopup(); } catch (e) {}
+      map.setView([lat, lon], 16);
+      setTimeout(function () { try { map.invalidateSize(); } catch (e) {} }, 150);
+      return true;
+    }
+    // 否则忽略筛选，强制叠加一个高亮定位图标
+    if (window._focusMarker) { try { map.removeLayer(window._focusMarker); } catch (e) {} window._focusMarker = null; }
+    var nm = name || b.name || b.title || b.mc || "目标条目";
+    var pin = '<div style="transform:translate(-50%,-100%);text-align:center">' +
+      '<div style="background:#e8312f;color:#fff;font-size:12px;line-height:1.4;padding:3px 9px;border-radius:11px;box-shadow:0 2px 6px rgba(0,0,0,.35);white-space:nowrap">' + esc(nm) + '</div>' +
+      '<div style="width:0;height:0;margin:0 auto;border-left:7px solid transparent;border-right:7px solid transparent;border-top:11px solid #e8312f"></div>' +
+      '</div>';
+    window._focusMarker = L.marker([lat, lon], {
+      icon: L.divIcon({ className: "kbv-focus-pin", html: pin, iconSize: [1, 1], iconAnchor: [0, 0] }),
+      zIndexOffset: 1000
+    }).addTo(map);
+    if (typeof popupHtml === "function") { try { window._focusMarker.bindPopup(popupHtml(b)); } catch (e) {} }
+    try { window._focusMarker.openPopup(); } catch (e) {}
+    map.setView([lat, lon], 16);
+    setTimeout(function () { try { map.invalidateSize(); } catch (e) {} }, 150);
+    return true;
+  };
+
 
 
 
@@ -6828,7 +6949,7 @@ function orgValOrDefault(b, k) {
 
     $("genBody").innerHTML = html;
 
-    // v3.43：周边建筑物类型 chip → toggle .on（蓝色背景）；事件 stopPropagation 防止误触模式按钮
+    // v3.43：周边设备类型 chip → toggle .on（蓝色背景）；事件 stopPropagation 防止误触模式按钮
 
     $("genBody").querySelectorAll(".nbtype").forEach(function (el) {
 
@@ -7483,7 +7604,7 @@ function orgValOrDefault(b, k) {
 
         '</div></div>' +
 
-        '<div class="filter-sec"><h4>建筑物类型</h4><div class="chips">' +
+        '<div class="filter-sec"><h4>设备类型</h4><div class="chips">' +
 
         types.map(function (t) { return '<span class="chip btchip' + (__delBldState.types.has(t) ? " on" : "") + '" data-t="' + esc(t) + '">' + esc(t) + "</span>"; }).join("") +
 
@@ -8908,7 +9029,7 @@ function orgValOrDefault(b, k) {
 
       '<p>批量导入建筑物信息（CSV / Excel / ZIP 压缩包）。</p>' +
 
-      '<p style="color:#888;font-size:12px">支持列：name(名称), lat(纬度), lon(经度), office(管理所), station(管理站), btype(建筑物类型), chan(段)。<br>有经纬度的自动定位；无经纬度的按名称匹配已有建筑物坐标。</p></div>' +
+      '<p style="color:#888;font-size:12px">支持列：name(名称), lat(纬度), lon(经度), office(管理所), station(管理站), btype(设备类型), chan(段)。<br>有经纬度的自动定位；无经纬度的按名称匹配已有建筑物坐标。</p></div>' +
 
       '<div class="form-actions"><button class="btn-save" onclick="pickBuildingFile()">选择文件</button></div>' +
 
@@ -9202,13 +9323,13 @@ function orgValOrDefault(b, k) {
 
     var iStation = findCol(["station", "管理站"]);
 
-    var iBtype = findCol(["btype", "type", "建筑物类型", "类型"]);
+    var iBtype = findCol(["btype", "type", "设备类型", "类型"]);
 
     var iChan = findCol(["chan", "段", "渠道"]);
     // v3.68：参数串列（奥维 Comment / 本应用 comment·参数说明）与宽表属性列
     var iAttrBlob = findCol(["comment", "参数说明", "参数", "params", "描述", "说明", "属性", "attributes", "remark", "备注说明", "parameters"]);
     var BASE_KEYS = ["name", "名称", "建筑物名称", "设备名称", "设施名称", "景点名称", "lat", "latitude", "纬度", "lon", "lng", "longitude", "经度",
-      "office", "管理所", "station", "管理站", "btype", "type", "建筑物类型", "类型", "chan", "段", "渠道", "inspect", "巡视次数",
+      "office", "管理所", "station", "管理站", "btype", "type", "设备类型", "类型", "chan", "段", "渠道", "inspect", "巡视次数",
       "id", "编号", "序号", "文件夹", "folder", "路径", "path", "comment", "参数说明", "参数", "params", "描述", "说明", "属性", "attributes", "remark", "备注说明", "parameters"];
     var attrCols = [];
     for (var ci = 0; ci < header.length; ci++) {
@@ -9935,7 +10056,7 @@ function orgValOrDefault(b, k) {
       "与水利 v3.48 同步回归修复（感知核心=感知切切实设备，保留 subsystem 子系统 + equip_type 设备类型元数据）：①子菜单长按添加/移除快捷常用（与 ☆ 并存，长按不误开菜单）；②UOS deb 统一修复（浏览器壳 + control 四件套 + 独立端口 7206）；③Win MSI/EXE WebView2 userDataFolder 根治 E_ACCESSDENIED + 出包修复标记门禁；④webroot 垃圾清理与打包剪枝。"
     ]},
     { v: "v1.22", d: "2026-08-31", items: [
-      "与水利 v3.46 同步回归修复：①筛选菜单 管理所/管理站/建筑物类型 添加生效修复（filterState 持久化）；②导入压缩包照片 level-aware 三级匹配（longest-match）；③AI 结果单击/双击复制关键词 + 进一步操作提示；④隐藏当前密钥显示 + 复制密钥需验证口令；⑤导出建筑物表格/导出照片 script error 回归验证通过。"
+      "与水利 v3.46 同步回归修复：①筛选菜单 管理所/管理站/设备类型 添加生效修复（filterState 持久化）；②导入压缩包照片 level-aware 三级匹配（longest-match）；③AI 结果单击/双击复制关键词 + 进一步操作提示；④隐藏当前密钥显示 + 复制密钥需验证口令；⑤导出建筑物表格/导出照片 script error 回归验证通过。"
     ]},
     { v: "v3.30", d: "2026-08-24", items: [
 
@@ -10003,7 +10124,7 @@ function orgValOrDefault(b, k) {
 
     { v: "v3.25", d: "2026-08-20", items: [
 
-      "功能（建筑物双维度区分 · 需求②）：不同建筑物类型用「颜色 + 形状」双重区分——标记水滴填充色取类型专属色（colorForType），中心白点内嵌该类型专属形状符号（shapeForType：● ■ ▲ ◆ ★ ⬢ ✚ ✖ 循环对应）。左下角图例同步升级：每个类型项展示「名称 + 彩色形状符号」，一眼可辨类型归属。颜色按类型名哈希唯一，形状按同类哈希循环，二者叠加保证两两易区分。",
+      "功能（建筑物双维度区分 · 需求②）：不同设备类型用「颜色 + 形状」双重区分——标记水滴填充色取类型专属色（colorForType），中心白点内嵌该类型专属形状符号（shapeForType：● ■ ▲ ◆ ★ ⬢ ✚ ✖ 循环对应）。左下角图例同步升级：每个类型项展示「名称 + 彩色形状符号」，一眼可辨类型归属。颜色按类型名哈希唯一，形状按同类哈希循环，二者叠加保证两两易区分。",
 
       "核对（需求③④⑤⑥⑦及四端对照单）：导入同名建筑三选一覆盖 / 同文件 SHA-256 二次导入提示、智能模糊匹配（不确定在范围内确认）、每页退出按钮 + 三击空白进主菜单、执行中「请稍后」忙提示、查询/筛选置顶 + 实时计数 + 蓝/绿虚线圈选 + 单/多/零结果跳转、信息与帮助「四端功能对照单」子菜单等此前已实现项，本轮回归确认无回退。"
 
@@ -10015,7 +10136,7 @@ function orgValOrDefault(b, k) {
 
       "功能（筛选圈改浅蓝）：筛选「确认」的多结果圈选改为浅蓝色虚线圈（#4aa3e0），与主界面查询的绿色圈区分开（查询=绿，筛选=浅蓝）。",
 
-      "功能（建筑物类型规范化）：主界面图例、筛选「建筑物类型」、编辑表单类型下拉统一改为规范类型清单，移除被误当类型的字段（西田各庄段引渠 / 技术指标 / 挖填方统计表 / “进水闸 部分缺少经纬度”等，仅影响分类显示，不删任何建筑），新增「泵站」「溢洪道」类型；历史遗留的非规范类型在编辑该建筑时仍保留可选项，避免被静默改写。"
+      "功能（设备类型规范化）：主界面图例、筛选「设备类型」、编辑表单类型下拉统一改为规范类型清单，移除被误当类型的字段（西田各庄段引渠 / 技术指标 / 挖填方统计表 / “进水闸 部分缺少经纬度”等，仅影响分类显示，不删任何建筑），新增「泵站」「溢洪道」类型；历史遗留的非规范类型在编辑该建筑时仍保留可选项，避免被静默改写。"
 
     ]},
 
@@ -10297,7 +10418,7 @@ function orgValOrDefault(b, k) {
 
     ]},
 
-    { v: "v3.41", d: "2026-08-29", note: "本版（智能AI×知识库深度融合 + 交互修复）：①发行前预生成建筑骨干知识库（kb_building_seed.js 随安装包内置，安装即有本地KB）；②智能AI查询与知识库查询融合为同一引擎：先查本地KB（标注🔒本地），本地无且允许联网再走大模型（标注🌐在线），全程异常兜底不再出现「运行错误: script error」，查询前有确认按钮；③知识库支持读取网页入库（普通网页/微信公众号/微博）；④智能更新补丁预览改为可编辑输入框；⑤修复筛选照片状态点击卡顿/死机（事件委托）；⑥筛选管理所/管理站支持手动添加与改名（逐个确认同步建筑物），添加/编辑建筑物表单改下拉选择；⑦筛选关键词历史记录（可展开/收起）；⑧周边搜索新增「当前位置」「地图选坐标」中心 + 按周边建筑物类型筛选；⑨导出建筑物表格/照片管理所覆盖全部9所并按建筑物自动匹配；⑩导出 ovkmz/ovobj/照片/表格均支持自定义文件名。", rows: [
+    { v: "v3.41", d: "2026-08-29", note: "本版（智能AI×知识库深度融合 + 交互修复）：①发行前预生成建筑骨干知识库（kb_building_seed.js 随安装包内置，安装即有本地KB）；②智能AI查询与知识库查询融合为同一引擎：先查本地KB（标注🔒本地），本地无且允许联网再走大模型（标注🌐在线），全程异常兜底不再出现「运行错误: script error」，查询前有确认按钮；③知识库支持读取网页入库（普通网页/微信公众号/微博）；④智能更新补丁预览改为可编辑输入框；⑤修复筛选照片状态点击卡顿/死机（事件委托）；⑥筛选管理所/管理站支持手动添加与改名（逐个确认同步建筑物），添加/编辑建筑物表单改下拉选择；⑦筛选关键词历史记录（可展开/收起）；⑧周边搜索新增「当前位置」「地图选坐标」中心 + 按周边设备类型筛选；⑨导出建筑物表格/照片管理所覆盖全部9所并按建筑物自动匹配；⑩导出 ovkmz/ovobj/照片/表格均支持自定义文件名。", rows: [
 
       { f: "发行前预生成建筑骨干知识库（随包内置）", a: "✅", i: "✅", w: "✅", u: "✅", n: "v3.41 kb_building_seed.js 安装即有本地KB，可导出/导入" },
 
@@ -10857,7 +10978,7 @@ function orgValOrDefault(b, k) {
 
     if (b.chan) L.push("所属渠段：" + b.chan);
 
-    if (b.btype) L.push("建筑物类型：" + b.btype);
+    if (b.btype) L.push("设备类型：" + b.btype);
 
     if (b.lat != null && b.lon != null && isFinite(b.lat) && isFinite(b.lon)) {
 
@@ -11685,7 +11806,7 @@ function orgValOrDefault(b, k) {
 
     chan: ["渠道", "所属渠道", "chan", "channel", "干渠"],
 
-    btype: ["建筑物类型", "类型", "btype", "type", "建筑类型"],
+    btype: ["设备类型", "类型", "btype", "type", "建筑类型"],
 
     name: ["建筑物名称", "名称", "name", "工程名称"]
 
@@ -12470,7 +12591,7 @@ function orgValOrDefault(b, k) {
       // 结构化属性：内部字段 + 自定义属性，保证导回无损
 
       var ext = dataEl("管理单位", normOffice(b.office)) + dataEl("管理站", b.station) +
-                dataEl("渠道", b.chan) + dataEl("建筑物类型", b.btype) +
+                dataEl("渠道", b.chan) + dataEl("设备类型", b.btype) +
                 dataEl("局", b.ju || "") + dataEl("管理处", b.guanchu || "");
 
       (b.attrs || []).forEach(function (a) { if (a[0]) ext += dataEl(a[0], a[1]); });
@@ -13019,7 +13140,7 @@ function orgValOrDefault(b, k) {
 
       { k: "office", t: "管理所", checked: true }, { k: "station", t: "管理站", checked: true },
 
-      { k: "chan", t: "段", checked: true }, { k: "btype", t: "建筑物类型", checked: true },
+      { k: "chan", t: "段", checked: true }, { k: "btype", t: "设备类型", checked: true },
 
       { k: "lat", t: "纬度", checked: true }, { k: "lon", t: "经度", checked: true },
 
@@ -13159,7 +13280,7 @@ function orgValOrDefault(b, k) {
 
     var offsNorm = offs.map(function (o) { return o ? (normOffice(o) || o) : ""; });
 
-    var labelMap = { name: "名称", ju: "局", guanchu: "管理处", office: "管理所", station: "管理站", chan: "段", btype: "建筑物类型", lat: "纬度", lon: "经度", params: "comment", inspect: "巡视次数" };
+    var labelMap = { name: "名称", ju: "局", guanchu: "管理处", office: "管理所", station: "管理站", chan: "段", btype: "设备类型", lat: "纬度", lon: "经度", params: "comment", inspect: "巡视次数" };
 
     var attrCols = cols.filter(function (c) { return c.indexOf("attr:") === 0; }).map(function (c) { return c.slice(5); });
 
@@ -14230,6 +14351,7 @@ function nmOpenList() {
  * 智能AI 查询（把全部游记/备忘录作为上下文，调用 AIModule.ask）
  * ========================================================================== */
 function nmAskAI() {
+    if (appSmartAIHidden()) { toast("智能AI 已隐藏：请到 设置 → 一键显示智能AI子菜单 开启"); return; }
   if (!nmCfg) { try { toast("模块未初始化"); } catch (_) {} return; }
   nmEnsureStyle();
   var all = nmGetAll();
